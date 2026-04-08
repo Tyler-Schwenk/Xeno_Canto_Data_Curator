@@ -1,0 +1,16 @@
+# Audio files - never commit large audio data
+\All_Audio_Data\*.mp3
+\All_Audio_Data\*.wav
+All_Audio_Data\*.wav
+All_Audio_Data\*
+*.mp3
+*.wav
+All_Audio_Data
+
+# Pipeline output
+output/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
