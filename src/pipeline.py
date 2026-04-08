@@ -1,4 +1,5 @@
-"""Main pipeline: generate the Xeno-Canto batch upload metadata CSV.
+"""Main pipeline: generate the Xeno-Canto batch upload metadata CSV and
+optionally bundle the corresponding WAV files into a ZIP for submission.
 
 Scans the AudioMoth WAV clips directory for RADR-positive recordings, parses
 each filename, maps metadata to Xeno-Canto format, and writes the result as a
@@ -6,7 +7,8 @@ CSV file ready for submission to XC administrators.
 
 Usage (run from the project root):
     python src/pipeline.py
-    python src/pipeline.py --data-dir /path/to/splits --output /path/to/out.csv
+    python src/pipeline.py --zip
+    python src/pipeline.py --data-dir /path/to/splits --output /path/to/out.csv --zip --zip-output /path/to/out.zip
 """
 
 import argparse
@@ -14,6 +16,7 @@ import csv
 import logging
 import pathlib
 import sys
+import zipfile
 from typing import Iterator
 
 # Allow running this file directly from the project root, with src/ on the path.
@@ -35,6 +38,7 @@ DEFAULT_DATA_DIR = (
     _PROJECT_ROOT / "All_Audio_Data" / "from custom classifier suite" / "splits"
 )
 DEFAULT_OUTPUT_PATH = _PROJECT_ROOT / "output" / "xc_metadata.csv"
+DEFAULT_ZIP_PATH = _PROJECT_ROOT / "output" / "xc_audio.zip"
 
 POSITIVE_SUBDIR_NAME = "positive"
 
@@ -114,6 +118,50 @@ def write_csv(rows: list[dict], output_path: pathlib.Path) -> None:
         writer.writerows(rows)
 
 
+def build_zip(
+    splits_dir: pathlib.Path, zip_path: pathlib.Path, rows: list[dict]
+) -> None:
+    """Bundle positive RADR WAV files into a flat ZIP archive.
+
+    Only files whose filenames appear in the metadata rows are included,
+    ensuring the ZIP and CSV are always in sync. Files are stored flat
+    (no subdirectory structure) inside the ZIP, which is the format expected
+    by Xeno-Canto for batch submission.
+
+    Args:
+        splits_dir: Root of the splits directory tree to search for WAV files.
+        zip_path: Destination ZIP file path.
+        rows: The metadata rows already produced by build_rows; used to
+            determine which filenames to include.
+
+    Side effects:
+        Creates parent directories as needed and writes the ZIP file to disk.
+        Logs a warning for any filename in rows whose WAV file cannot be found.
+    """
+    included = {row["filename"] for row in rows}
+    wav_index: dict[str, pathlib.Path] = {
+        p.name: p for p in find_positive_wav_files(splits_dir)
+    }
+
+    zip_path.parent.mkdir(parents=True, exist_ok=True)
+    missing: list[str] = []
+
+    with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_STORED) as zf:
+        for filename in sorted(included):
+            wav_path = wav_index.get(filename)
+            if wav_path is None:
+                missing.append(filename)
+                continue
+            zf.write(wav_path, arcname=filename)
+
+    log.info("Wrote %d files to %s", len(included) - len(missing), zip_path)
+
+    if missing:
+        log.warning("%d file(s) listed in metadata but not found on disk:", len(missing))
+        for name in missing:
+            log.warning("  %s", name)
+
+
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
@@ -123,7 +171,7 @@ def _parse_args() -> argparse.Namespace:
     """Parse command-line arguments.
 
     Returns:
-        Namespace with data_dir and output attributes.
+        Namespace with data_dir, output, zip, and zip_output attributes.
     """
     parser = argparse.ArgumentParser(
         description=(
@@ -145,6 +193,18 @@ def _parse_args() -> argparse.Namespace:
         metavar="PATH",
         help=f"Output CSV path (default: {DEFAULT_OUTPUT_PATH})",
     )
+    parser.add_argument(
+        "--zip",
+        action="store_true",
+        help="Also bundle the positive WAV files into a ZIP archive for submission.",
+    )
+    parser.add_argument(
+        "--zip-output",
+        type=pathlib.Path,
+        default=DEFAULT_ZIP_PATH,
+        metavar="PATH",
+        help=f"Output ZIP path (default: {DEFAULT_ZIP_PATH})",
+    )
     return parser.parse_args()
 
 
@@ -164,6 +224,9 @@ def main() -> int:
     rows, errors = build_rows(args.data_dir)
     write_csv(rows, args.output)
     log.info("Wrote %d rows to %s", len(rows), args.output)
+
+    if args.zip:
+        build_zip(args.data_dir, args.zip_output, rows)
 
     if errors:
         log.warning("%d file(s) could not be parsed:", len(errors))

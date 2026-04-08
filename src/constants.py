@@ -36,7 +36,6 @@ ANIMAL_SEEN = "no"
 PLAYBACK_USED = "no"
 # Full license name as required by XC predefined list
 DEFAULT_LICENSE = "Creative Commons Attribution-NonCommercial 4.0"
-RECORDIST_NAME = "Tyler Schwenk"
 
 # XC placeholder for unknown date/time components
 UNKNOWN_DATE = "????-??-??"
@@ -55,80 +54,93 @@ class SiteInfo:
         site: Human-readable site name used in XC location field.
         lat: Latitude in decimal degrees (WGS84).
         lon: Longitude in decimal degrees (WGS84).
-        elevation_m: Elevation above sea level in metres.
+        elevation_m: Elevation in whole metres above sea level (XC requires integer).
         country: Full country name as expected by XC.
+        recordist: Name or institution to credit as recordist on XC.
     """
 
     site: str
     lat: float
     lon: float
-    elevation_m: float
+    elevation_m: int
     country: str
+    recordist: str
 
 
+# TODO: Confirm the correct recordist name or institution for each recorder.
+# Moth13 is legacy data from Frank; all others are Tyler Schwenk's deployments.
 SITE_REGISTRY: dict[str, SiteInfo] = {
     "Moth01": SiteInfo(
         site="Wheatley Ranch",
         lat=33.212408,
         lon=-116.746651,
-        elevation_m=949.1,
+        elevation_m=949,
         country="United States",
+        recordist="San Diego Natural History Museum",
     ),
     "Moth02": SiteInfo(
         site="Wheatley Ranch",
         lat=33.212408,
         lon=-116.746651,
-        elevation_m=949.1,
+        elevation_m=949,
         country="United States",
+        recordist="San Diego Natural History Museum",
     ),
     "Moth03": SiteInfo(
         site="Wheatley Ranch",
         lat=33.212408,
         lon=-116.746651,
-        elevation_m=949.1,
+        elevation_m=949,
         country="United States",
+        recordist="San Diego Natural History Museum",
     ),
     "Moth04": SiteInfo(
         site="Wheatley Ranch",
         lat=33.212408,
         lon=-116.746651,
-        elevation_m=949.1,
+        elevation_m=949,
         country="United States",
+        recordist="San Diego Natural History Museum",
     ),
     "Moth06": SiteInfo(
         site="Wheatley Ranch",
         lat=33.212408,
         lon=-116.746651,
-        elevation_m=949.1,
+        elevation_m=949,
         country="United States",
+        recordist="San Diego Natural History Museum",
     ),
     "Moth08": SiteInfo(
         site="SRPER Cole Creek",
         lat=33.531385,
         lon=-117.268689,
-        elevation_m=540.0,
+        elevation_m=540,
         country="United States",
+        recordist="San Diego Natural History Museum",
     ),
     "Moth11": SiteInfo(
         site="SRPER Sylvan Pond",
         lat=33.529285,
         lon=-117.285871,
-        elevation_m=573.0,
+        elevation_m=573,
         country="United States",
+        recordist="San Diego Natural History Museum",
     ),
     "Moth12": SiteInfo(
         site="SRPER Sylvan Pond",
         lat=33.529285,
         lon=-117.285871,
-        elevation_m=573.0,
+        elevation_m=573,
         country="United States",
+        recordist="San Diego Natural History Museum",
     ),
     "Moth13": SiteInfo(
         site="Rancho Meling",
         lat=30.975073,
         lon=-115.744407,
-        elevation_m=638.4,
+        elevation_m=638,
         country="Mexico",
+        recordist="San Diego Natural History Museum",
     ),
 }
 
@@ -138,8 +150,8 @@ SITE_REGISTRY: dict[str, SiteInfo] = {
 
 QUALITY_TO_XC: dict[str, str] = {
     "high": "A",
-    "medium": "B",
-    "low": "C",
+    "medium": "C",
+    "low": "E",
 }
 
 CALL_TYPE_TO_XC_SOUND_TYPE: dict[str, str] = {

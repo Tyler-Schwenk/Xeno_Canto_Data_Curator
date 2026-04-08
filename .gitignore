@@ -9,6 +9,7 @@ All_Audio_Data
 
 # Pipeline output
 output/
+*.zip
 
 # Python
 __pycache__/
